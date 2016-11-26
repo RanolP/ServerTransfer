@@ -15,6 +15,7 @@ public class ClientManagement {
 	String uuid;
 	public static ClientManagement staticClient;
 	boolean onSend = false;
+	public String salt;
 
 	public ClientManagement(String host) {
 		staticClient = this;

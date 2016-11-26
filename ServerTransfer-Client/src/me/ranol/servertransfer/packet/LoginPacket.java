@@ -4,7 +4,9 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import me.ranol.servertransfer.ClientManagement;
 import me.ranol.servertransfer.PasswordSaver;
+import me.ranol.servertransfer.SaltMaker;
 
 public class LoginPacket implements Packet<String> {
 	String id;
@@ -31,6 +33,8 @@ public class LoginPacket implements Packet<String> {
 		Packet.super.ping(out);
 		out.writeUTF(id);
 		out.writeUTF(PasswordSaver.hashing(pwd));
+		ClientManagement.staticClient.salt = SaltMaker.makeSalt(16);
+		out.writeUTF(ClientManagement.staticClient.salt);
 	}
 
 	@Override
