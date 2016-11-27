@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.Arrays;
 
@@ -54,6 +55,14 @@ public class ClientManagement {
 			System.out.println(packet.getClass().getSimpleName() + " 전송 종료");
 			onSend = false;
 			return obj;
+		} catch (SocketException e) {
+			if ("Connection reset".equals(e.getMessage())) {
+				SWTRun.runSync(() -> {
+					MessageView.info(ServerTransfer.shell).message("서버 연결이 불안정하여 종료합니다.").title("종료").open();
+					ServerTransfer.close();
+					LoginFrame.reopen();
+				});
+			}
 		} catch (SocketTimeoutException e) {
 			if (packet instanceof LoginPacket) {
 				SWTRun.runSync(MessageView.info(LoginFrame.shell).message("서버 연결에 실패했습니다.").title("로그인 불가")::open);
@@ -96,13 +105,24 @@ public class ClientManagement {
 								ServerTransfer.setLog(log);
 								break;
 							case KICK:
+								ServerTransfer.close();
+								LoginFrame.reopen();
 								SWTRun.runAsync(() -> {
 									MessageView.info(LoginFrame.shell).message("서버가 당신을 퇴출했습니다.").title("강제 퇴출").open();
-									ServerTransfer.close();
 								});
 								run = false;
 								break;
 							default:
+								break;
+							}
+						} catch (SocketException e) {
+							if ("Connection reset".equals(e.getMessage())) {
+								SWTRun.runSync(() -> {
+									MessageView.info(ServerTransfer.shell).message("서버 연결이 불안정하여 종료합니다.").title("종료")
+											.open();
+									ServerTransfer.close();
+									LoginFrame.reopen();
+								});
 								break;
 							}
 						} catch (Exception e) {

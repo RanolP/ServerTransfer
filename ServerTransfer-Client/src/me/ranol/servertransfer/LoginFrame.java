@@ -6,13 +6,16 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.wb.swt.SWTResourceManager;
 
 import me.ranol.servertransfer.packet.LoginPacket;
 import me.ranol.servertransfer.swtutils.MessageView;
+import me.ranol.servertransfer.swtutils.SWTRun;
 
 public class LoginFrame {
 	protected static Shell shell;
@@ -31,11 +34,16 @@ public class LoginFrame {
 
 	public void open() {
 		try {
+			if (shell != null) {
+				shell = null;
+				createContents();
+				return;
+			}
 			Display display = Display.getDefault();
 			createContents();
 			shell.open();
 			shell.layout();
-			while (!shell.isDisposed()) {
+			while (shell != null && !shell.isDisposed()) {
 				if (!display.readAndDispatch()) {
 					display.sleep();
 				}
@@ -55,6 +63,14 @@ public class LoginFrame {
 		shell.setBackground(SWTResourceManager.getColor(SWT.COLOR_BLACK));
 		shell.setText("Login");
 		shell.setSize(300, 300);
+
+		shell.addListener(SWT.Close, new Listener() {
+
+			@Override
+			public void handleEvent(Event e) {
+				System.exit(-1);
+			}
+		});
 
 		Composite composite = new Composite(shell, SWT.NONE);
 		composite.setBounds(0, 0, 294, 271);
@@ -80,14 +96,17 @@ public class LoginFrame {
 		label_3.setBounds(10, 145, 77, 28);
 
 		host = new Text(composite, SWT.BORDER);
+		host.setText("");
 		host.setFont(SWTResourceManager.getFont("맑은 고딕", 11, SWT.NORMAL));
 		host.setBounds(92, 78, 150, 28);
 
 		id = new Text(composite, SWT.BORDER);
+		id.setText("");
 		id.setFont(SWTResourceManager.getFont("맑은 고딕", 11, SWT.NORMAL));
 		id.setBounds(92, 112, 150, 28);
 
 		pwd = new Text(composite, SWT.BORDER | SWT.PASSWORD);
+		pwd.setText("");
 		pwd.setFont(SWTResourceManager.getFont("맑은 고딕", 11, SWT.NORMAL));
 		pwd.setBounds(93, 146, 150, 28);
 
@@ -119,7 +138,7 @@ public class LoginFrame {
 						ClientManagement.staticClient.setUUID(result);
 						ClientManagement.staticClient.connectReciever();
 						MessageView.info(shell).message("등록된 계정입니다.\n다시 오신 것을 축하합니다.").title("로그인").open();
-						shell.dispose();
+						close();
 						ServerTransfer st = new ServerTransfer();
 						st.open();
 					}
@@ -129,8 +148,13 @@ public class LoginFrame {
 			}
 		});
 		button.setText("Login");
+		button.setEnabled(true);
 		button.setFont(SWTResourceManager.getFont("맑은 고딕", 11, SWT.NORMAL));
 		button.setBounds(11, 179, 231, 40);
+	}
+
+	public void close() {
+		shell.setVisible(false);
 	}
 
 	public static String getHost() {
@@ -143,6 +167,14 @@ public class LoginFrame {
 
 	public static String getPassword() {
 		return pwd.getText();
+	}
+
+	public static void reopen() {
+		SWTRun.runAsync(() -> {
+			LoginFrame frame = new LoginFrame();
+			frame.open();
+			shell.setVisible(true);
+		});
 	}
 
 }
