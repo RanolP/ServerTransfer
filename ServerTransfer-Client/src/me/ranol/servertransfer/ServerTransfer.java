@@ -1,7 +1,5 @@
 package me.ranol.servertransfer;
 
-import java.io.IOException;
-
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -15,7 +13,6 @@ import org.eclipse.swt.widgets.TabItem;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.wb.swt.SWTResourceManager;
 
-import me.ranol.servertransfer.packet.LogoutPacket;
 import me.ranol.servertransfer.swtutils.SWTRun;
 
 public class ServerTransfer {
@@ -113,11 +110,7 @@ public class ServerTransfer {
 		logout.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent ee) {
-				try {
-					ClientManagement.staticClient.sendPacket(new LogoutPacket());
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
+				ClientManagement.staticClient.logout();
 				shell.dispose();
 			}
 		});
@@ -131,7 +124,7 @@ public class ServerTransfer {
 			@Override
 			public void widgetSelected(SelectionEvent ee) {
 				try {
-					ClientManagement.staticClient.sendPacket(new LogoutPacket());
+					ClientManagement.staticClient.logout();
 				} catch (Exception e) {
 				}
 				shell.dispose();

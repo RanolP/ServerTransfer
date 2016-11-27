@@ -2,13 +2,15 @@ package me.ranol.servertransfer;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.util.Arrays;
 
 import me.ranol.servertransfer.packet.ConnectPacket;
+import me.ranol.servertransfer.packet.LoginPacket;
+import me.ranol.servertransfer.packet.LogoutPacket;
 import me.ranol.servertransfer.packet.Packet;
 import me.ranol.servertransfer.packet.RPackets;
 import me.ranol.servertransfer.packet.RecieveablePacket;
@@ -21,10 +23,12 @@ public class ClientManagement {
 	InetSocketAddress address;
 	String uuid;
 	public static ClientManagement staticClient;
-	boolean onSend = false;
+	static boolean onSend = false;
 	public String salt;
+	static boolean run = false;
 
 	public ClientManagement(String host) {
+		run = true;
 		staticClient = this;
 		this.socket = new Socket();
 		this.recieveOnly = new Socket();
@@ -37,33 +41,47 @@ public class ClientManagement {
 		connect();
 	}
 
-	public <T> T sendPacket(Packet<T> packet) throws IOException {
+	public <T> T sendPacket(Packet<T> packet) {
 		if (onSend)
 			return null;
-		onSend = true;
-		DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-		DataInputStream in = new DataInputStream(socket.getInputStream());
-		packet.ping(out);
-		T obj = packet.pong(in);
-		onSend = false;
-		return obj;
+		try {
+			onSend = true;
+			System.out.println(packet.getClass().getSimpleName() + " 전송 시작");
+			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+			DataInputStream in = new DataInputStream(socket.getInputStream());
+			packet.ping(out);
+			T obj = packet.pong(in);
+			System.out.println(packet.getClass().getSimpleName() + " 전송 종료");
+			onSend = false;
+			return obj;
+		} catch (SocketTimeoutException e) {
+			if (packet instanceof LoginPacket) {
+				SWTRun.runSync(MessageView.info(LoginFrame.shell).message("서버 연결에 실패했습니다.").title("로그인 불가")::open);
+			}
+			onSend = false;
+		} catch (Exception e) {
+			System.out.println(packet.getClass().getSimpleName() + " 알 수 없는 종료");
+			onSend = false;
+		}
+		return null;
 	}
 
 	public void connectReciever() {
 		try {
 			recieveOnly.connect(address);
 			ConnectPacket connect = new ConnectPacket();
-			onSend = true;
 			DataOutputStream out = new DataOutputStream(recieveOnly.getOutputStream());
 			DataInputStream in = new DataInputStream(recieveOnly.getInputStream());
 			connect.ping(out);
 			boolean con = connect.pong(in);
 			if (con) {
 				new Thread(() -> {
-					loop: while (true) {
+					while (run) {
 						try {
 							byte[] bytes = new byte[4];
 							in.readFully(bytes);
+							if (!run)
+								break;
 							if (!Arrays.equals(RecieveablePacket.RECIEVEMAGIC, bytes)) {
 								System.out.println("반환 소켓에서 잘못된 Magic을 받았습니다.");
 								System.out.println("Magic: " + Arrays.toString(bytes));
@@ -79,13 +97,11 @@ public class ClientManagement {
 								break;
 							case KICK:
 								SWTRun.runAsync(() -> {
-									MessageView.info(ServerTransfer.shell).message("서버가 당신을 퇴출했습니다.").title("강제 퇴출")
-											.open();
+									MessageView.info(LoginFrame.shell).message("서버가 당신을 퇴출했습니다.").title("강제 퇴출").open();
 									ServerTransfer.close();
-									LoginFrame l = new LoginFrame();
-									l.open();
 								});
-								break loop;
+								run = false;
+								break;
 							default:
 								break;
 							}
@@ -114,5 +130,11 @@ public class ClientManagement {
 
 	public String getUUID() {
 		return uuid;
+	}
+
+	public void logout() {
+		run = false;
+		sendPacket(new LogoutPacket());
+		staticClient = null;
 	}
 }

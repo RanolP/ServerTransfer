@@ -1,8 +1,5 @@
 package me.ranol.servertransfer;
 
-import java.io.IOException;
-import java.net.SocketTimeoutException;
-
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -18,7 +15,7 @@ import me.ranol.servertransfer.packet.LoginPacket;
 import me.ranol.servertransfer.swtutils.MessageView;
 
 public class LoginFrame {
-	protected Shell shell;
+	protected static Shell shell;
 	public static Text host;
 	public static Text id;
 	public static Text pwd;
@@ -102,36 +99,30 @@ public class LoginFrame {
 				button.setText("Login..");
 				new ClientManagement(LoginFrame.getHost());
 				LoginPacket packet = new LoginPacket(LoginFrame.getId(), LoginFrame.getPassword());
-				try {
-					String result = ClientManagement.staticClient.sendPacket(packet);
-					if (result != null) {
-						MessageView cant = MessageView.info(shell).title("로그인 불가");
-						switch (result) {
-						case "ACC":
-							cant.message("서버에 등록된 Id가 아닙니다.").open();
-							break;
-						case "PWD":
-							cant.message("비밀번호가 일치하지 않습니다.").open();
-							break;
-						case "ALA":
-							cant.message("이미 로그인된 계정입니다.").open();
-							break;
-						case "WTF":
-							cant.message("알 수 없는 이유로 거절되었습니다.").open();
-							break;
-						default:
-							ClientManagement.staticClient.setUUID(result);
-							ClientManagement.staticClient.connectReciever();
-							MessageView.info(shell).message("등록된 계정입니다.\n다시 오신 것을 축하합니다.").title("로그인").open();
-							shell.dispose();
-							ServerTransfer st = new ServerTransfer();
-							st.open();
-						}
+				String result = ClientManagement.staticClient.sendPacket(packet);
+				if (result != null) {
+					MessageView cant = MessageView.info(shell).title("로그인 불가");
+					switch (result) {
+					case "ACC":
+						cant.message("서버에 등록된 Id가 아닙니다.").open();
+						break;
+					case "PWD":
+						cant.message("비밀번호가 일치하지 않습니다.").open();
+						break;
+					case "ALA":
+						cant.message("이미 로그인된 계정입니다.").open();
+						break;
+					case "WTF":
+						cant.message("알 수 없는 이유로 거절되었습니다.").open();
+						break;
+					default:
+						ClientManagement.staticClient.setUUID(result);
+						ClientManagement.staticClient.connectReciever();
+						MessageView.info(shell).message("등록된 계정입니다.\n다시 오신 것을 축하합니다.").title("로그인").open();
+						shell.dispose();
+						ServerTransfer st = new ServerTransfer();
+						st.open();
 					}
-				} catch (SocketTimeoutException e) {
-					MessageView.info(shell).message("서버 연결에 실패했습니다.").title("로그인 불가").open();
-				} catch (IOException e) {
-					e.printStackTrace();
 				}
 				button.setEnabled(true);
 				button.setText("Login");
