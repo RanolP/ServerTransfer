@@ -105,18 +105,23 @@ public class LoginFrame {
 				try {
 					String result = ClientManagement.staticClient.sendPacket(packet);
 					if (result != null) {
+						MessageView cant = MessageView.info(shell).title("로그인 불가");
 						switch (result) {
 						case "ACC":
-							MessageView.info(shell).message("서버에 등록된 Id가 아닙니다.").title("로그인 불가").open();
+							cant.message("서버에 등록된 Id가 아닙니다.").open();
 							break;
 						case "PWD":
-							MessageView.info(shell).message("비밀번호가 일치하지 않습니다.").title("로그인 불가").open();
+							cant.message("비밀번호가 일치하지 않습니다.").open();
+							break;
+						case "ALA":
+							cant.message("이미 로그인된 계정입니다.").open();
 							break;
 						case "WTF":
-							MessageView.info(shell).message("알 수 없는 이유로 거절되었습니다.").title("로그인 불가").open();
+							cant.message("알 수 없는 이유로 거절되었습니다.").open();
 							break;
 						default:
 							ClientManagement.staticClient.setUUID(result);
+							ClientManagement.staticClient.connectReciever();
 							MessageView.info(shell).message("등록된 계정입니다.\n다시 오신 것을 축하합니다.").title("로그인").open();
 							shell.dispose();
 							ServerTransfer st = new ServerTransfer();

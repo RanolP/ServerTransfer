@@ -16,6 +16,7 @@ public class LoginPacket implements Packet<String> {
 		public static final byte PWD_NOT_EQUAL = 0;
 		public static final byte ACCOUNT_NOT_EXISTS = 1;
 		public static final byte SUCESS_LOGIN = 2;
+		public static final byte ALREADY_LOGIN = 3;
 	}
 
 	public LoginPacket(String id, String pwd) {
@@ -45,6 +46,8 @@ public class LoginPacket implements Packet<String> {
 			return "PWD";
 		case LoginResponse.ACCOUNT_NOT_EXISTS:
 			return "ACC";
+		case LoginResponse.ALREADY_LOGIN:
+			return "ALA";
 		case LoginResponse.SUCESS_LOGIN:
 			return in.readUTF();
 		default:

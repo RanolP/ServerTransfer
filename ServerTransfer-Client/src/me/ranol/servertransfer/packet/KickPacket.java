@@ -3,16 +3,16 @@ package me.ranol.servertransfer.packet;
 import java.io.DataInputStream;
 import java.io.IOException;
 
-public class LogPacket implements RecieveablePacket<String> {
+public class KickPacket implements RecieveablePacket<Boolean> {
 
 	@Override
 	public int id() {
-		return 1;
+		return 5;
 	}
 
 	@Override
-	public String pong(DataInputStream in) throws IOException {
-		return in.readUTF();
+	public Boolean pong(DataInputStream in) throws IOException {
+		return true;
 	}
 
 }

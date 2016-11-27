@@ -16,12 +16,15 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.wb.swt.SWTResourceManager;
 
 import me.ranol.servertransfer.packet.LogoutPacket;
+import me.ranol.servertransfer.swtutils.SWTRun;
 
 public class ServerTransfer {
 	protected static Shell shell;
 	private Text text;
 	private Text visible;
 	private Text nPwd;
+
+	static Label logs;
 
 	/**
 	 * Open the window.
@@ -78,6 +81,9 @@ public class ServerTransfer {
 		Button start = new Button(composite_1, SWT.NONE);
 		start.setText("Start server");
 		start.setBounds(466, 282, 111, 25);
+
+		logs = new Label(composite_1, SWT.WRAP);
+		logs.setBounds(10, 10, 450, 331);
 
 		TabItem tbtmSetOption = new TabItem(tabFolder, SWT.NONE);
 		tbtmSetOption.setImage(SWTResourceManager.getImage(ServerTransfer.class, "/image/option.png"));
@@ -158,5 +164,9 @@ public class ServerTransfer {
 		tbtmFiles.setImage(SWTResourceManager.getImage(ServerTransfer.class, "/image/folder.png"));
 		tbtmFiles.setText("Files");
 
+	}
+
+	public static void setLog(String log) {
+		SWTRun.runAsync(() -> logs.setText(log));
 	}
 }
