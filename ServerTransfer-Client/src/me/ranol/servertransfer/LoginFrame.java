@@ -33,23 +33,19 @@ public class LoginFrame {
 	}
 
 	public void open() {
-		try {
-			if (shell != null) {
-				shell = null;
-				createContents();
-				return;
-			}
-			Display display = Display.getDefault();
+		if (shell != null) {
+			shell = null;
 			createContents();
-			shell.open();
-			shell.layout();
-			while (shell != null && !shell.isDisposed()) {
-				if (!display.readAndDispatch()) {
-					display.sleep();
-				}
+			return;
+		}
+		Display display = Display.getDefault();
+		createContents();
+		shell.open();
+		shell.layout();
+		while (!shell.isDisposed()) {
+			if (!display.readAndDispatch()) {
+				display.sleep();
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
 	}
 
@@ -59,7 +55,6 @@ public class LoginFrame {
 	protected void createContents() {
 		shell = new Shell(SWT.TITLE | SWT.CLOSE | SWT.MIN);
 		shell.setImage(SWTResourceManager.getImage(LoginFrame.class, "/image/icon.png"));
-		shell.setSize(600, 450);
 		shell.setBackground(SWTResourceManager.getColor(SWT.COLOR_BLACK));
 		shell.setText("Login");
 		shell.setSize(300, 300);
@@ -139,8 +134,7 @@ public class LoginFrame {
 						ClientManagement.staticClient.connectReciever();
 						MessageView.info(shell).message("등록된 계정입니다.\n다시 오신 것을 축하합니다.").title("로그인").open();
 						close();
-						ServerTransfer st = new ServerTransfer();
-						st.open();
+						ServerTransfer.reopen();
 					}
 				}
 				button.setEnabled(true);

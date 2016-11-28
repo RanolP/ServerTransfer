@@ -4,6 +4,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.dnd.DND;
+import org.eclipse.swt.dnd.DropTarget;
+import org.eclipse.swt.dnd.DropTargetAdapter;
+import org.eclipse.swt.dnd.DropTargetEvent;
+import org.eclipse.swt.dnd.FileTransfer;
+import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.MouseAdapter;
@@ -27,6 +33,7 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.wb.swt.SWTResourceManager;
 
 import me.ranol.servertransfer.packet.FileListPacket;
+import me.ranol.servertransfer.swtutils.MessageView;
 import me.ranol.servertransfer.swtutils.SWTRun;
 
 public class ServerTransfer {
@@ -35,7 +42,7 @@ public class ServerTransfer {
 	private Text text;
 	private Text visible;
 	private Text nPwd;
-	private String directory = ".";
+	static String directory = ".";
 	static Image unknown = SWTResourceManager.getImage(ServerTransfer.class, "/image/file.png");
 	static Image folder = SWTResourceManager.getImage(ServerTransfer.class, "/image/coloredFolder.png");
 
@@ -51,7 +58,9 @@ public class ServerTransfer {
 	 */
 	public void open() {
 		if (shell != null) {
-			shell.setVisible(true);
+			shell = null;
+			createContents();
+			updateFiles();
 			return;
 		}
 		Display display = Display.getDefault();
@@ -66,14 +75,14 @@ public class ServerTransfer {
 	}
 
 	public static void close() {
-		SWTRun.runAsync(() -> shell.setVisible(false));
+		shell.setVisible(false);
 	}
 
 	/**
 	 * Create contents of the window.
 	 */
 	protected void createContents() {
-		shell = new Shell(SWT.TITLE | SWT.MIN);
+		shell = new Shell(SWT.TITLE | SWT.CLOSE | SWT.MIN);
 		shell.setImage(SWTResourceManager.getImage(ServerTransfer.class, "/image/icon.png"));
 		shell.setSize(600, 450);
 		shell.setText("Server Transfer - Client");
@@ -230,7 +239,33 @@ public class ServerTransfer {
 				openFile(table.getItem(table.getSelectionIndex()));
 			}
 		});
+		DropTarget target = new DropTarget(table, DND.DROP_MOVE | DND.DROP_DEFAULT);
+		target.setTransfer(new Transfer[] { FileTransfer.getInstance() });
+		target.addDropListener(new DropTargetAdapter() {
+			@Override
+			public void drop(DropTargetEvent e) {
+				if (!FileTransfer.getInstance().isSupportedType(e.currentDataType))
+					return;
+				String[] files = (String[]) e.data;
+				MessageView view = MessageView.confirm(shell).title("전송");
+				StringBuilder b = new StringBuilder();
+				for (String s : files)
+					b.append(s.replaceFirst(".+\\\\", "") + "\n");
+				view.message((files.length > 1 ? "다중" : "단일") + " 파일 전송입니다.\n파일 갯수 " + files.length + "개\n전송 파일 목록:"
+						+ b.toString() + "전송 위치: " + directory + "\n수락하시겠습니까? [전송 중에는 아무 동작도 할 수 없습니다.]");
+				switch (view.open()) {
+				case SWT.OK:
+					close();
+					FileSendFrame.reopen(files);
+					break;
+				case SWT.CANCEL:
+				default:
+					break;
+				}
+			}
+		});
 		tabFolder.addSelectionListener(new SelectionAdapter() {
+
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				if (!(e.item instanceof TabItem) || !"Files".equals(((TabItem) e.item).getText())
@@ -240,8 +275,6 @@ public class ServerTransfer {
 			}
 		});
 
-		Composite composite_2 = new Composite(tabFolder, SWT.NONE);
-
 	}
 
 	void updateFiles() {
@@ -249,6 +282,12 @@ public class ServerTransfer {
 				.sendPacket(new FileListPacket(directory));
 		table.clearAll();
 		if (files == null)
+			return;
+		table.setItemCount(files.size() + 1);
+		TableItem up = table.getItem(0);
+		up.setImage(folder);
+		up.setText("상위 폴더로: ");
+		if (files.isEmpty())
 			return;
 		if (files.get(0).equals("해당 경로가 존재하지 않습니다 :(")) {
 			table.setItemCount(1);
@@ -258,10 +297,6 @@ public class ServerTransfer {
 			nope.setText("해당 경로가 존재하지 않습니다. [텍스트 창에서 엔터를 눌러주세요]");
 			return;
 		}
-		table.setItemCount(files.size() + 1);
-		TableItem up = table.getItem(0);
-		up.setImage(folder);
-		up.setText("상위 폴더로: ");
 		SWTRun.runAsync(() -> {
 			int idx = 1;
 			for (String s : files) {
@@ -305,5 +340,15 @@ public class ServerTransfer {
 
 	public static void setLog(String log) {
 		SWTRun.runAsync(() -> logs.setText(log));
+	}
+
+	public static void reopen() {
+		SWTRun.runAsync(() -> {
+			if (shell != null && shell.isVisible())
+				return;
+			ServerTransfer st = new ServerTransfer();
+			st.open();
+			shell.setVisible(true);
+		});
 	}
 }

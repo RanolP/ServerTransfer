@@ -47,12 +47,10 @@ public class ClientManagement {
 			return null;
 		try {
 			onSend = true;
-			System.out.println(packet.getClass().getSimpleName() + " 전송 시작");
 			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 			DataInputStream in = new DataInputStream(socket.getInputStream());
 			packet.ping(out);
 			T obj = packet.pong(in);
-			System.out.println(packet.getClass().getSimpleName() + " 전송 종료");
 			onSend = false;
 			return obj;
 		} catch (SocketException e) {
@@ -70,6 +68,7 @@ public class ClientManagement {
 			onSend = false;
 		} catch (Exception e) {
 			System.out.println(packet.getClass().getSimpleName() + " 알 수 없는 종료");
+			e.printStackTrace();
 			onSend = false;
 		}
 		return null;
@@ -106,10 +105,10 @@ public class ClientManagement {
 								break;
 							case KICK:
 								ServerTransfer.close();
+								FileSendFrame.close();
 								LoginFrame.reopen();
-								SWTRun.runAsync(() -> {
-									MessageView.info(LoginFrame.shell).message("서버가 당신을 퇴출했습니다.").title("강제 퇴출").open();
-								});
+								SWTRun.runAsync(MessageView.info(LoginFrame.shell).message("서버가 당신을 퇴출했습니다.")
+										.title("강제 퇴출")::open);
 								run = false;
 								break;
 							default:

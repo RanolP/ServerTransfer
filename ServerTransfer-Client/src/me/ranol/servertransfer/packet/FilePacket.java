@@ -7,18 +7,28 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 import me.ranol.servertransfer.ClientManagement;
+import me.ranol.servertransfer.PercentageWriter;
 
 public class FilePacket implements Packet<Boolean> {
 	byte[] bytes;
+	int len;
 	String path;
+	PercentageWriter pw = new PercentageWriter(null);
+	String filename;
 
 	public FilePacket(File file, String path) {
 		try {
+			filename = file.getName();
 			this.path = path;
 			bytes = Files.readAllBytes(file.toPath());
+			len = bytes.length;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	public FilePacket(String file, String directory) {
+		this(new File(file), directory);
 	}
 
 	@Override
@@ -28,16 +38,26 @@ public class FilePacket implements Packet<Boolean> {
 
 	@Override
 	public void ping(DataOutputStream out) throws IOException {
-		Packet.super.ping(out);
-		out.writeUTF(path);
-		out.writeUTF(ClientManagement.staticClient.getUUID());
-		out.writeInt(bytes.length);
-		out.write(bytes);
+		pw.setOut(out);
+		Packet.super.ping(pw);
+		pw.writeUTF(ClientManagement.staticClient.getUUID());
+		pw.writeInt(len);
+		pw.writeUTF(path + "\\" + filename);
+		pw.start();
+		pw.write(bytes);
 	}
 
 	@Override
 	public Boolean pong(DataInputStream in) throws IOException {
 		return in.readBoolean();
+	}
+
+	public PercentageWriter writer() {
+		return pw;
+	}
+
+	public int all() {
+		return len;
 	}
 
 }

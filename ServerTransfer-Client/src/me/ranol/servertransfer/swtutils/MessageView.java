@@ -28,4 +28,8 @@ public class MessageView {
 	public static MessageView info(Shell shell) {
 		return new MessageView(shell, SWT.ICON_INFORMATION | SWT.OK);
 	}
+
+	public static MessageView confirm(Shell shell) {
+		return new MessageView(shell, SWT.ICON_QUESTION | SWT.OK | SWT.CANCEL);
+	}
 }
